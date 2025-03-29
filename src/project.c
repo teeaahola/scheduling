@@ -2,12 +2,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void addMeeting()
+{
+    printf("add!\n");
+}
+
+void deleteMeeting()
+{
+    printf("delete!\n");
+}
+
+void printCalendar()
+{
+    printf("print!\n");
+}
+
+void saveCalendar()
+{
+    printf("save!\n");
+}
+
+void loadCalendar()
+{
+    printf("load!\n");
+}
+
+void quit()
+{
+    printf("quit!\n");
+}
+
 int main(void)
 {
     char *str = (char *)malloc(1000 * sizeof(char));
 
-    int quit = 0;
-    while (!quit)
+    int quitLoop = 0;
+    while (!quitLoop)
     {
         fgets(str, 1000, stdin); // read input
         if (!*str)
@@ -23,24 +53,24 @@ int main(void)
         switch (command)
         {
         case 'A': // add meeting to database
-            printf("add!\n");
+            addMeeting();
             break;
         case 'D': // delete meeting from database
-            printf("delete!\n");
+            deleteMeeting();
             break;
         case 'L': // print calendar
-            printf("print!\n");
+            printCalendar();
             break;
         case 'W': // save calendar to file
-            printf("save!\n");
+            saveCalendar();
             break;
         case 'O': // load meetings from file
-            printf("load!\n");
+            loadCalendar();
             break;
         case 'Q': // quit program
-            quit = 1;
+            quitLoop = 1;
             free(str);
-            printf("quit!\n");
+            quit();
             break;
         default: // unknown command
             printf("Invalid command %s\n", str);
