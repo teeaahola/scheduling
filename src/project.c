@@ -1,8 +1,10 @@
 #include "project.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 
-void addMeeting(char *str, Meeting *calendar, int *size)
+void addMeeting(char *str, Meeting **calendar, int *size)
 {
     char desc[100]; // fix implementation
     int day, month, hour;
@@ -31,21 +33,28 @@ void addMeeting(char *str, Meeting *calendar, int *size)
     // check for overlap between events
     for (int i = 0; i < *size; i++)
     {
-        Meeting current = calendar[i];
-        if (current.month == month && current.day == day && current.hour == hour)
+        Meeting curr = (*calendar)[i];
+        if (curr.month == month && curr.day == day && curr.hour == hour)
         {
             printf("Cannot add meeting to occupied time slot.\n");
             return;
         }
-        printf("iterating through loop: i = %d\n", i);
     }
     // allocate memory for new meeting and copy its information
-    *size += 1;
-    calendar = (Meeting *)realloc(calendar, *size);
-    calendar[*size - 1].description = desc;
-    calendar[*size - 1].month = month;
-    calendar[*size - 1].day = day;
-    calendar[*size - 1].hour = hour;
+    (*size)++;
+    Meeting *temp = (Meeting *)realloc(*calendar, *size * sizeof(Meeting));
+    if (!temp)
+    {
+        printf("Memory reallocation failed.");
+        return;
+    }
+    *calendar = temp;
+    // Meeting *curr = &calendar[*size - 1];
+    (*calendar)[*size - 1].description = malloc(strlen(desc) + 1);
+    strcpy((*calendar)[*size - 1].description, desc);
+    (*calendar)[*size - 1].month = month;
+    (*calendar)[*size - 1].day = day;
+    (*calendar)[*size - 1].hour = hour;
     printf("SUCCESS!\n");
 }
 
@@ -55,19 +64,19 @@ void deleteMeeting(char *str, Meeting *calendar, int *size)
     printf("SUCCESS!\n");
 }
 
-void printCalendar(Meeting *calendar)
+void printTo(Meeting *calendar, FILE *stream, int *size)
 {
-    printf("print!\n");
+    // sort the calendar in order of meeting time
+    // print each entry
+    for (int i = 0; i < *size; i++)
+    {
+        Meeting curr = calendar[i];
+        fprintf(stream, "%s %02d.%02d at %02d\n", curr.description, curr.day, curr.month, curr.hour);
+    }
     printf("SUCCESS!\n");
 }
 
-void saveCalendar(Meeting *calendar, char *filename)
-{
-    FILE *file = fopen(filename, "w");
-    fclose(file);
-    printf("save!\n");
-    printf("SUCCESS!\n");
-}
+void saveFile(char *str, Meeting *calendar, int *size) {}
 
 void loadCalendar(Meeting *calendar, char *filename)
 {
@@ -86,10 +95,9 @@ void quit(Meeting *calendar)
 int main(void)
 {
     Meeting *calendar = (Meeting *)malloc(sizeof(Meeting)); // array to store database
-    int *size;
-    size = 0;
+    int size = 0;
     char *str = (char *)malloc(1000 * sizeof(char));
-
+    char command;
     int quitLoop = 0;
     while (!quitLoop)
     {
@@ -98,26 +106,29 @@ int main(void)
         {
             printf("Issue reading command.\n");
         }
-        char command;
         int scanned = sscanf(str, "%c", &command);
         if (scanned != 1)
         {
             printf("Issue parsing command.");
         }
-        // fix reading input so does not accept 'Add' for 'A'
+        if (!isspace(str[1]))
+        {
+            printf("Invalid command %s\n", str);
+            continue;
+        }
         switch (command)
         {
         case 'A': // add meeting to database
-            addMeeting(str, calendar, &size);
+            addMeeting(str, &calendar, &size);
             break;
         case 'D': // delete meeting from database
             deleteMeeting(str, calendar, &size);
             break;
         case 'L': // print calendar
-            printCalendar(calendar);
+            printTo(calendar, stdout, &size);
             break;
         case 'W': // save calendar to file
-            saveCalendar(calendar, str);
+            saveFile(str, calendar, &size);
             break;
         case 'O': // load meetings from file
             loadCalendar(calendar, str);
@@ -128,7 +139,7 @@ int main(void)
             quit(calendar);
             break;
         default: // unknown command
-            printf("Invalid command %s\n", str);
+            printf("Invalid command %s", str);
             break;
         }
     }

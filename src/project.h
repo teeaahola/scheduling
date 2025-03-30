@@ -1,5 +1,6 @@
 #ifndef _PROJECT__H_
 #define _PROJECT__H_
+#include <stdio.h>
 
 /* structure to maintain meetings in a calendar */
 typedef struct
@@ -10,10 +11,9 @@ typedef struct
     int hour;
 } Meeting;
 
-void addMeeting(char *str, Meeting *calendar, int *size);
+void addMeeting(char *str, Meeting **calendar, int *size);
 void deleteMeeting(char *str, Meeting *calendar, int *size);
-void printCalendar(Meeting *calendar);
-void saveCalendar(Meeting *calendar, char *filename);
+void printTo(Meeting *calendar, FILE *stream, int *size);
 void loadCalendar(Meeting *calendar, char *filename);
 void quit(Meeting *calendar);
 
