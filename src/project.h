@@ -10,11 +10,11 @@ typedef struct
     int hour;
 } Meeting;
 
-void addMeeting();
-void deleteMeeting();
-void printCalendar();
-void saveCalendar();
-void loadCalendar();
-void quit();
+void addMeeting(char *str, Meeting *calendar, int *size);
+void deleteMeeting(char *str, Meeting *calendar, int *size);
+void printCalendar(Meeting *calendar);
+void saveCalendar(Meeting *calendar, char *filename);
+void loadCalendar(Meeting *calendar, char *filename);
+void quit(Meeting *calendar);
 
 #endif //! _PROJECT__H_
