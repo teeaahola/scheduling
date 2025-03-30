@@ -45,7 +45,7 @@ void addMeeting(char *str, Meeting **calendar, int *size)
     Meeting *temp = (Meeting *)realloc(*calendar, *size * sizeof(Meeting));
     if (!temp)
     {
-        printf("Memory reallocation failed.");
+        printf("Memory allocation failed.");
         return;
     }
     *calendar = temp;
@@ -76,11 +76,65 @@ void printTo(Meeting *calendar, FILE *stream, int *size)
     printf("SUCCESS!\n");
 }
 
-void saveFile(char *str, Meeting *calendar, int *size) {}
+void saveFile(char *str, Meeting *calendar, int *size)
+{
+    char *txt;
+    txt = ".txt";
+    char filename[100]; // fix implementation
+    int scanned = sscanf(str, "W %s\n", filename);
+    if (scanned != 1)
+    {
+        printf("Incorrect number of arguments for 'W': expected 1 but received %d.\n", scanned);
+        return;
+    }
+    strcat(filename, txt);
+    FILE *file = fopen(filename, "w");
+    if (!file)
+    {
+        printf("Error opening file %s for writing.\n", filename);
+        return;
+    }
+    printTo(calendar, file, size);
+    fclose(file);
+}
 
 void loadCalendar(Meeting *calendar, char *filename)
 {
     FILE *file = fopen(filename, "r");
+    // count number of lines (= number of meetings) in the file
+    int i = 0;
+    if (!file)
+    {
+        return -1;
+    }
+    int chr;
+    chr = fgetc(file);
+    int prev = chr;
+    while (chr)
+    {
+        if (chr == '\n')
+        {
+            i++;
+        }
+        if (chr == EOF)
+        {
+            if (prev == '\n')
+            {
+                break;
+            }
+            else
+            {
+                if (prev == EOF)
+                {
+                    break;
+                }
+                i++;
+                break;
+            }
+        }
+        prev = chr;
+        chr = fgetc(file);
+    }
     fclose(file);
     printf("load!\n");
     printf("SUCCESS!\n");
