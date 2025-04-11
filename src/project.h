@@ -14,7 +14,7 @@ typedef struct
 void addMeeting(char *str, Meeting **calendar, int *size);
 void deleteMeeting(char *str, Meeting *calendar, int *size);
 void printTo(Meeting *calendar, FILE *stream, int *size);
-void loadCalendar(Meeting *calendar, char *filename);
+void loadCalendar(Meeting *calendar, char *filename, int *size);
 void quit(Meeting *calendar);
 
 #endif //! _PROJECT__H_

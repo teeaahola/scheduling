@@ -98,14 +98,16 @@ void saveFile(char *str, Meeting *calendar, int *size)
     fclose(file);
 }
 
-void loadCalendar(Meeting *calendar, char *filename)
+void loadCalendar(Meeting *calendar, char *filename, int *size)
 {
+    // strip beginning of command
     FILE *file = fopen(filename, "r");
     // count number of lines (= number of meetings) in the file
     int i = 0;
     if (!file)
     {
-        return -1;
+        printf("Error opening file %s.", filename);
+        return;
     }
     int chr;
     chr = fgetc(file);
@@ -134,6 +136,16 @@ void loadCalendar(Meeting *calendar, char *filename)
         }
         prev = chr;
         chr = fgetc(file);
+    }
+    *size = i;
+    rewind(file);
+    calendar = (Meeting *)malloc(*size * sizeof(Meeting));
+    for (int j = 0; j < *size; j++)
+    {
+        char *str = (char *)calloc(*size, sizeof(Meeting));
+        fgets(str, 1000, file);
+        Meeting curr = calendar[i];
+        int scanned = sscanf(str, "%s %d.%d at %d\n", curr.description, &curr.day, &curr.month, &curr.hour);
     }
     fclose(file);
     printf("load!\n");
@@ -185,7 +197,7 @@ int main(void)
             saveFile(str, calendar, &size);
             break;
         case 'O': // load meetings from file
-            loadCalendar(calendar, str);
+            loadCalendar(calendar, str, &size);
             break;
         case 'Q': // quit program
             quitLoop = 1;
