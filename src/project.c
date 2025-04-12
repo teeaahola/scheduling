@@ -11,43 +11,35 @@ void addMeeting(char *str, Meeting **calendar, int *size)
     int scanned = sscanf(str, "%s %d %d %d", desc, &month, &day, &hour);
     if (scanned != 4)
     {
-        printf("Incorrect number of arguments for 'A': expected 4 but received %d.\n", scanned);
+        printf("A should be followed by exactly 4 arguments.\n");
         return;
     }
     //  check if date and time are acceptable
     if (month < 1 || month > 12)
     {
-        printf("Month was %d but should be a value between 1 and 12\n", month);
+        printf("Month cannot be less than 1 or greater than 12.\n");
         return;
     }
     if (day < 1 || day > 31)
     {
-        printf("Day was %d but should be a value between 1 and 31\n", day);
+        printf("Day cannot be less than 1 or greater than 31.\n");
         return;
     }
     if (hour < 0 || hour > 23)
     {
-        printf("Hour was %d but should be a value between 0 and 23\n", hour);
+        printf("Hour cannot be negative or greater than 23.\n");
         return;
     }
     // check for overlap between events
-    // the loop checks most cases and the last node in the list (where next == NULL) is checked separately
     Meeting *curr = *calendar;
-    int overlap = curr->month == month && curr->day == day && curr->hour == hour;
-    while (curr->next)
+    while (curr)
     {
-        if (overlap)
+        if (curr->month == month && curr->day == day && curr->hour == hour)
         {
             printf("Cannot add meeting to occupied time slot.\n");
             return;
         }
         curr = curr->next;
-    }
-    // check the last node of the list for overlap
-    if (overlap)
-    {
-        printf("Cannot add meeting to occupied time slot.\n");
-        return;
     }
     // allocate memory for new meeting
     (*size)++;
@@ -62,8 +54,9 @@ void addMeeting(char *str, Meeting **calendar, int *size)
     new->month = month;
     new->day = day;
     new->hour = hour;
-    // add meeting to the database in order
-    if (!((*calendar)->description) || (new->month < curr->month) || ((new->month == curr->month) && (new->day < curr->day || ((new->day == curr->day &&new->hour < curr->hour)))))
+    // new->next = NULL;
+    //  add meeting to the database in order
+    if (!((*calendar)) || (new->month < (*calendar)->month) || ((new->month == (*calendar)->month) && (new->day < (*calendar)->day || ((new->day == (*calendar)->day &&new->hour < (*calendar)->hour)))))
     {
         new->next = *calendar;
         *calendar = new;
@@ -72,27 +65,78 @@ void addMeeting(char *str, Meeting **calendar, int *size)
     {
         // Meeting *prev = calendar;
         curr = *calendar;
-        // int found = 0;
-        int check = (new->month < curr->next->month) || ((new->month == curr->next->month) && (new->day < curr->next->day || ((new->day == curr->next->day &&new->hour < curr->next->hour))));
-        while (curr->next->description && !check)
+        while (curr->next && !((new->month < curr->next->month) || ((new->month == curr->next->month) && (new->day < curr->next->day || ((new->day == curr->next->day &&new->hour < curr->next->hour))))))
         {
-            // update previous and current values
-            // prev = curr;
             curr = curr->next;
         }
-        // add new meeting to the database between prev and curr
+        // add new meeting to the database
         new->next = curr->next;
         curr->next = new;
     }
     printf("SUCCESS!\n");
 }
-/*
-void deleteMeeting(char *str, Meeting *calendar, int *size)
+
+void deleteMeeting(char *str, Meeting **calendar, int *size)
 {
-    printf("delete!\n");
+    int day, month, hour;
+    int scanned = sscanf(str, "%d %d %d", &month, &day, &hour);
+    if (scanned != 3)
+    {
+        printf("D should be followed by exactly 3 arguments.\n");
+        return;
+    }
+    //  check if date and time are acceptable
+    if (month < 1 || month > 12)
+    {
+        printf("Month cannot be less than 1 or greater than 12.\n");
+        return;
+    }
+    if (day < 1 || day > 31)
+    {
+        printf("Day cannot be less than 1 or greater than 31.\n");
+        return;
+    }
+    if (hour < 0 || hour > 23)
+    {
+        printf("Hour cannot be negative or greater than 23.\n");
+        return;
+    }
+    // check if the calendar is empty
+    if (!(*calendar))
+    {
+        printf("Time slot %02d.%02d at %02d is not in the calendar.\n", day, month, hour);
+        (*size)--; //
+        return;
+    }
+    // check if the deleted node is the first one
+    else if ((*calendar)->month == month && (*calendar)->day == day && (*calendar)->hour == hour)
+    {
+        Meeting *temp = *calendar;
+        *calendar = (*calendar)->next;
+        free(temp->description);
+        free(temp);
+    }
+    else
+    {
+        Meeting *curr = *calendar;
+        while (curr->next && !(curr->next->month == month && curr->next->day == day && curr->next->hour == hour))
+        {
+            curr = curr->next;
+        }
+        if (!curr->next)
+        {
+            printf("Time slot %02d.%02d at %02d is not in the calendar.\n", day, month, hour);
+            return;
+        }
+        Meeting *temp = curr->next;
+        curr->next = curr->next->next;
+        free(temp->description);
+        free(temp);
+        (*size)--;
+    }
     printf("SUCCESS!\n");
 }
-
+/*
 void printTo(Meeting *calendar, FILE *stream, int *size)
 {
     // sort the calendar in order of meeting time
@@ -201,7 +245,7 @@ void quit(Meeting *calendar)
 int main(void)
 {
     // initialise linked list to store database
-    Meeting *calendar = (Meeting *)calloc(1, sizeof(Meeting));
+    Meeting *calendar = NULL; //(Meeting *)calloc(1, sizeof(Meeting));
     // calendar->next = NULL;
     int size = 0;
     // assume the input string is at most 1000 characters long
@@ -231,7 +275,7 @@ int main(void)
             addMeeting(str + 2, &calendar, &size);
             break;
         case 'D': // delete meeting from database
-            // deleteMeeting(str, calendar, &size);
+            deleteMeeting(str + 2, &calendar, &size);
             break;
         case 'L': // print calendar
             // printTo(calendar, stdout, &size);
