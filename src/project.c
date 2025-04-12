@@ -73,7 +73,7 @@ void addMeeting(char *str, Meeting **calendar, int *size)
         new->next = curr->next;
         curr->next = new;
     }
-    printf("SUCCESS!\n");
+    printf("SUCCESS\n");
 }
 
 void deleteMeeting(char *str, Meeting **calendar, int *size)
@@ -134,21 +134,22 @@ void deleteMeeting(char *str, Meeting **calendar, int *size)
         free(temp);
         (*size)--;
     }
-    printf("SUCCESS!\n");
+    printf("SUCCESS\n");
 }
-/*
-void printTo(Meeting *calendar, FILE *stream, int *size)
+
+void printTo(Meeting *calendar, FILE *stream)
 {
     // sort the calendar in order of meeting time
     // print each entry
-    for (int i = 0; i < *size; i++)
+    Meeting *curr = calendar;
+    while (curr)
     {
-        Meeting curr = calendar[i];
-        fprintf(stream, "%s %02d.%02d at %02d\n", curr.description, curr.day, curr.month, curr.hour);
+        fprintf(stream, "%s %02d.%02d at %02d\n", curr->description, curr->day, curr->month, curr->hour);
+        curr = curr->next;
     }
-    printf("SUCCESS!\n");
+    printf("SUCCESS\n");
 }
-
+/*
 void saveFile(char *str, Meeting *calendar, int *size)
 {
     char *txt;
@@ -221,7 +222,7 @@ void loadCalendar(Meeting *calendar, char *filename, int *size)
     }
     fclose(file);
     printf("load!\n");
-    printf("SUCCESS!\n");
+    printf("SUCCESS\n");
 }
 */
 void quit(Meeting *calendar)
@@ -239,7 +240,7 @@ void quit(Meeting *calendar)
         free(curr->description);
         free(curr);
     }
-    printf("SUCCESS!\n");
+    printf("SUCCESS\n");
 }
 
 int main(void)
@@ -278,7 +279,7 @@ int main(void)
             deleteMeeting(str + 2, &calendar, &size);
             break;
         case 'L': // print calendar
-            // printTo(calendar, stdout, &size);
+            printTo(calendar, stdout);
             break;
         case 'W': // save calendar to file
             // saveFile(str + 2, calendar, &size);

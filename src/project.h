@@ -15,7 +15,7 @@ typedef struct meeting
 // functions to manage the database
 void addMeeting(char *str, Meeting **calendar, int *size);
 void deleteMeeting(char *str, Meeting **calendar, int *size);
-//  void printTo(Meeting *calendar, FILE *stream, int *size);
+void printTo(Meeting *calendar, FILE *stream);
 //  void saveFile(char *str, Meeting *calendar, int *size);
 //  void loadCalendar(Meeting *calendar, char *filename, int *size);
 void quit(Meeting *calendar);
