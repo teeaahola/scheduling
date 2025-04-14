@@ -6,13 +6,19 @@
 
 void addMeeting(char *str, Meeting **calendar, int *size)
 {
+    // allocate memory for the event description based on string length
     char *space;
     space = " ";
     int len = strcspn(str, space);
     char *desc = (char *)malloc(len + 1);
+    if (!desc)
+    {
+        printf("Memory allocation failed.");
+        return;
+    }
     int day, month, hour;
     int scanned = sscanf(str, "%s %d %d %d", desc, &month, &day, &hour);
-    desc[len] = '\0';
+    // validate number of scanned values
     if (scanned != 4)
     {
         printf("A should be followed by exactly 4 arguments.\n");
@@ -63,7 +69,6 @@ void addMeeting(char *str, Meeting **calendar, int *size)
     new->month = month;
     new->day = day;
     new->hour = hour;
-    // new->next = NULL;
     // add meeting to the database in order
     if (!((*calendar)) || (new->month < (*calendar)->month) || ((new->month == (*calendar)->month) && (new->day < (*calendar)->day || ((new->day == (*calendar)->day &&new->hour < (*calendar)->hour)))))
     {
@@ -161,21 +166,32 @@ void printTo(Meeting *calendar, FILE *stream)
 
 void saveFile(char *str, Meeting *calendar)
 {
-    char filename[100]; // fix implementation
+    char *space;
+    space = " \n";
+    int len = strcspn(str, space);
+    char *filename = (char *)malloc(len + 1);
+    if (!filename)
+    {
+        printf("Memory allocation failed.");
+        return;
+    }
     int scanned = sscanf(str, "%s\n", filename);
     if (scanned != 1)
     {
         printf("Incorrect number of arguments for 'W': expected 1 but received %d.\n", scanned);
+        free(filename);
         return;
     }
     FILE *file = fopen(filename, "w");
     if (!file)
     {
         printf("Error opening file %s for writing.\n", filename);
+        free(filename);
         return;
     }
     printTo(calendar, file);
     fclose(file);
+    free(filename);
 }
 /*
 void loadCalendar(Meeting **calendar, char *filename, int *size)
