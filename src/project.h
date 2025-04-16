@@ -13,11 +13,11 @@ typedef struct meeting
 } Meeting;
 
 // functions to manage the database
-void addMeeting(char *str, Meeting **calendar, int *size, int fromFile);
-void deleteMeeting(char *str, Meeting **calendar, int *size);
+void addMeeting(char *str, Meeting **calendar, int fromFile);
+void deleteMeeting(char *str, Meeting **calendar);
 void printTo(Meeting *calendar, FILE *stream);
-void saveFile(char *str, Meeting *calendar);
-// void loadCalendar(Meeting **calendar, char *filename, int *size);
-void quit(Meeting *calendar);
+void saveFile(char *str, Meeting **calendar);
+void loadCalendar(Meeting **calendar, char *filename);
+void quit(Meeting **calendar);
 
 #endif //! _PROJECT__H_

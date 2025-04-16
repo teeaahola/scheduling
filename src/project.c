@@ -4,20 +4,18 @@
 #include <ctype.h>
 #include <string.h>
 
-void addMeeting(char *str, Meeting **calendar, int *size, int fromFile)
+void addMeeting(char *str, Meeting **calendar, int fromFile)
 {
     // allocate memory for the event description based on string length
-    char *space = malloc(3);
-    space[0] = ' ';
-    space[1] = '\n';
-    space[2] = '\0';
+    char *space = " \n";
     int len = strcspn(str, space);
-    char *desc = (char *)malloc(len + 1);
+    char *desc = (char *)malloc(len + 2);
     if (!desc)
     {
         printf("Memory allocation failed.");
         return;
     }
+    // extract data from input string based on the format it is given
     int day, month, hour;
     int scanned;
     if (fromFile)
@@ -28,7 +26,6 @@ void addMeeting(char *str, Meeting **calendar, int *size, int fromFile)
     {
         scanned = sscanf(str, "%s %d %d %d", desc, &month, &day, &hour);
     }
-
     // validate number of scanned values
     if (scanned != 4)
     {
@@ -75,7 +72,6 @@ void addMeeting(char *str, Meeting **calendar, int *size, int fromFile)
         curr = curr->next;
     }
     // allocate memory for new meeting
-    (*size)++;
     Meeting *new = (Meeting *)malloc(sizeof(Meeting));
     if (!new)
     {
@@ -87,22 +83,20 @@ void addMeeting(char *str, Meeting **calendar, int *size, int fromFile)
     new->month = month;
     new->day = day;
     new->hour = hour;
-    // add meeting to the database in order
-    // the description is also checked but could be fixed
-    if (!((*calendar)) || !((*calendar)->description) || (new->month < (*calendar)->month) || ((new->month == (*calendar)->month) && (new->day < (*calendar)->day || ((new->day == (*calendar)->day &&new->hour < (*calendar)->hour)))))
+    // check if the new meeting should be the first one in the database
+    if (!((*calendar)) || (new->month < (*calendar)->month) || ((new->month == (*calendar)->month) && (new->day < (*calendar)->day || ((new->day == (*calendar)->day &&new->hour < (*calendar)->hour)))))
     {
         new->next = *calendar;
         *calendar = new;
     }
     else
+    // add the meeting to the database in order
     {
-        // Meeting *prev = calendar;
         curr = *calendar;
         while (curr->next && !((new->month < curr->next->month) || ((new->month == curr->next->month) && (new->day < curr->next->day || ((new->day == curr->next->day &&new->hour < curr->next->hour))))))
         {
             curr = curr->next;
         }
-        // add new meeting to the database
         new->next = curr->next;
         curr->next = new;
     }
@@ -111,8 +105,9 @@ void addMeeting(char *str, Meeting **calendar, int *size, int fromFile)
     printf("SUCCESS\n");
 }
 
-void deleteMeeting(char *str, Meeting **calendar, int *size)
+void deleteMeeting(char *str, Meeting **calendar)
 {
+    // extract the time of the meeting to be deleted and validate arguments
     int day, month, hour;
     int scanned = sscanf(str, "%d %d %d", &month, &day, &hour);
     if (scanned != 3)
@@ -139,12 +134,11 @@ void deleteMeeting(char *str, Meeting **calendar, int *size)
     // check if the calendar is empty
     if (!(*calendar))
     {
-        printf("Time slot %02d.%02d at %02d is not in the calendar.\n", day, month, hour);
-        (*size)--; //
+        printf("Calendar is empty.\n");
         return;
     }
-    // check if the deleted node is the first one
-    else if ((*calendar)->month == month && (*calendar)->day == day && (*calendar)->hour == hour)
+    // delete given meeting
+    if ((*calendar)->month == month && (*calendar)->day == day && (*calendar)->hour == hour)
     {
         Meeting *temp = *calendar;
         *calendar = (*calendar)->next;
@@ -167,28 +161,26 @@ void deleteMeeting(char *str, Meeting **calendar, int *size)
         curr->next = curr->next->next;
         free(temp->description);
         free(temp);
-        (*size)--;
     }
     printf("SUCCESS\n");
 }
 
 void printTo(Meeting *calendar, FILE *stream)
 {
-    // sort the calendar in order of meeting time
-    // print each entry
     Meeting *curr = calendar;
     while (curr)
     {
+        // print each calendar entry to stream
         fprintf(stream, "%s %02d.%02d at %02d\n", curr->description, curr->day, curr->month, curr->hour);
         curr = curr->next;
     }
     printf("SUCCESS\n");
 }
 
-void saveFile(char *str, Meeting *calendar)
+void saveFile(char *str, Meeting **calendar)
 {
-    char *space; // does this work?
-    space = " \n";
+    // allocate memory for filename
+    char *space = " \n";
     int len = strcspn(str, space);
     char *filename = (char *)malloc(len + 1);
     if (!filename)
@@ -197,6 +189,7 @@ void saveFile(char *str, Meeting *calendar)
         return;
     }
     int scanned = sscanf(str, "%s\n", filename);
+    // validate number of arguments for W
     if (scanned != 1)
     {
         printf("Incorrect number of arguments for 'W': expected 1 but received %d.\n", scanned);
@@ -210,70 +203,75 @@ void saveFile(char *str, Meeting *calendar)
         free(filename);
         return;
     }
-    printTo(calendar, file);
+    // print calendar to file
+    printTo(*calendar, file);
+    if (ferror(file))
+    {
+        printf("Error handling file %s.", filename);
+        fclose(file);
+        return;
+    }
     fclose(file);
     free(filename);
 }
 
-void loadCalendar(Meeting **calendar, char *filename, int *size)
+void loadCalendar(Meeting **calendar, char *filename)
 {
-    // clear current calendar
-    quit(*calendar);
+    // strip newline character from given filename
     filename[strcspn(filename, "\n")] = 0;
     FILE *file = fopen(filename, "r");
     if (!file)
     {
-        printf("Error opening file %s.\n", filename);
+        printf("Cannot open file %s for reading.\n", filename);
         return;
     }
-    // count number of lines (= number of meetings) in the file
-    int i = 0;
+    // clear current calendar
+    quit(calendar);
     // assume the input string is at most 1000 characters long
     char *str = (char *)malloc(1000 * sizeof(char));
     while (fgets(str, 1000, file))
     {
-        ; // read input
-        addMeeting(str, calendar, size, 1);
+        // add the new meeting to the calendar
+        addMeeting(str, calendar, 1);
     }
     free(str);
-    *size = i;
+    if (ferror(file))
+    {
+        printf("Error handling file %s.", filename);
+        fclose(file);
+        return;
+    }
     fclose(file);
-    // insert error handling here
     printf("SUCCESS\n");
 }
 
-void quit(Meeting *calendar)
+void quit(Meeting **calendar)
 {
-    Meeting *curr = calendar;
-    while (curr->next)
+    Meeting *curr = *calendar;
+    while (curr)
     {
         Meeting *temp = curr;
         curr = curr->next;
         free(temp->description);
         free(temp);
     }
-    if (curr)
-    {
-        free(curr->description);
-        free(curr); // fix??
-    }
-    // the quit function does not print out "SUCCESS" so that it can be used in loadCalendar
+    *calendar = NULL;
+    // the quit function does not print out "SUCCESS" so that it can be called from loadCalendar
     // instead it is printed out in the main function
 }
 
 int main(void)
 {
     // initialise linked list to store database
-    Meeting *calendar = NULL; //(Meeting *)calloc(1, sizeof(Meeting));
-    // calendar->next = NULL;
-    int size = 0;
+    Meeting *calendar = NULL;
     // assume the input string is at most 1000 characters long
     char *str = (char *)malloc(1000 * sizeof(char));
     char command;
     int quitLoop = 0;
     while (!quitLoop)
     {
-        fgets(str, 1000, stdin); // read input
+        // read input
+        fgets(str, 1000, stdin);
         if (!*str)
         {
             printf("Issue reading command.\n");
@@ -291,24 +289,24 @@ int main(void)
         switch (command)
         {
         case 'A': // add meeting to database
-            addMeeting(str + 2, &calendar, &size, 0);
+            addMeeting(str + 2, &calendar, 0);
             break;
         case 'D': // delete meeting from database
-            deleteMeeting(str + 2, &calendar, &size);
+            deleteMeeting(str + 2, &calendar);
             break;
         case 'L': // print calendar
             printTo(calendar, stdout);
             break;
         case 'W': // save calendar to file
-            saveFile(str + 2, calendar);
+            saveFile(str + 2, &calendar);
             break;
-        case 'O': // load meetings from file
-            loadCalendar(&calendar, str + 2, &size);
+        case 'O': // load calendar from file
+            loadCalendar(&calendar, str + 2);
             break;
         case 'Q': // quit program
             quitLoop = 1;
             free(str);
-            quit(calendar);
+            quit(&calendar);
             printf("SUCCESS\n");
             break;
         default: // unknown command
