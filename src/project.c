@@ -28,11 +28,12 @@ void addMeeting(char *str, Meeting **calendar, int fromFile)
 {
     // allocate memory for the event description and time
     // since the input string can be up to 1000 characters long and we do not know how
-    // long the individual components are, each component is allocated 1000 bytes initially
-    char *desc = (char *)malloc(1000);
-    char *dayStr = (char *)malloc(1000);
-    char *monthStr = (char *)malloc(1000);
-    char *hourStr = (char *)malloc(1000);
+    // long the individual components are, each component is allocated 1000 (+ terminating
+    // null character) bytes initially
+    char *desc = (char *)malloc(1001);
+    char *dayStr = (char *)malloc(1001);
+    char *monthStr = (char *)malloc(1001);
+    char *hourStr = (char *)malloc(1001);
     if (!desc || !dayStr || !monthStr || !hourStr)
     {
         printf("Memory allocation failed.");
@@ -161,10 +162,11 @@ void deleteMeeting(char *str, Meeting **calendar)
 {
     // extract the time of the meeting to be deleted and validate arguments
     // since the input string can be up to 1000 characters long and we do not know how
-    // long the individual components are, each component is allocated 1000 bytes initially
-    char *dayStr = (char *)malloc(1000);
-    char *monthStr = (char *)malloc(1000);
-    char *hourStr = (char *)malloc(1000);
+    // long the individual components are, each component is allocated 1000 (+ terminating
+    // null character) bytes initially
+    char *dayStr = (char *)malloc(1001);
+    char *monthStr = (char *)malloc(1001);
+    char *hourStr = (char *)malloc(1001);
     int scanned = sscanf(str, "%s %s %s", monthStr, dayStr, hourStr);
     if (scanned != 3)
     {
@@ -252,25 +254,10 @@ void printTo(Meeting *calendar, FILE *stream)
     printf("SUCCESS\n");
 }
 
-void saveFile(char *str, Meeting **calendar)
+void saveFile(Meeting **calendar, char *filename)
 {
-    // allocate memory for filename
-    char *space = " \n";
-    int len = strcspn(str, space);
-    char *filename = (char *)malloc(len + 1);
-    if (!filename)
-    {
-        printf("Memory allocation failed.");
-        return;
-    }
-    int scanned = sscanf(str, "%s\n", filename);
-    // validate number of arguments for W
-    if (scanned != 1)
-    {
-        printf("Incorrect number of arguments for 'W': expected 1 but received %d.\n", scanned);
-        free(filename);
-        return;
-    }
+    // strip newline character from given filename
+    filename[strcspn(filename, "\n")] = 0;
     FILE *file = fopen(filename, "w");
     if (!file)
     {
@@ -287,7 +274,6 @@ void saveFile(char *str, Meeting **calendar)
         return;
     }
     fclose(file);
-    free(filename);
 }
 
 void loadCalendar(Meeting **calendar, char *filename)
@@ -351,6 +337,7 @@ int main(void)
         {
             printf("Issue reading command.\n");
         }
+        // chech whether given command follow guidelines
         int scanned = sscanf(str, "%c", &command);
         if (scanned != 1)
         {
@@ -358,9 +345,10 @@ int main(void)
         }
         if (!isspace(str[1]))
         {
-            printf("Invalid command %s\n", str);
+            printf("Invalid command %s", str);
             continue;
         }
+        // execute command
         switch (command)
         {
         case 'A': // add meeting to database
@@ -373,7 +361,7 @@ int main(void)
             printTo(calendar, stdout);
             break;
         case 'W': // save calendar to file
-            saveFile(str + 2, &calendar);
+            saveFile(&calendar, str + 2);
             break;
         case 'O': // load calendar from file
             loadCalendar(&calendar, str + 2);
@@ -385,7 +373,7 @@ int main(void)
             printf("SUCCESS\n");
             break;
         default: // unknown command
-            printf("Invalid command %s\n", str);
+            printf("Invalid command %s", str);
             break;
         }
     }
