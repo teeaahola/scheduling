@@ -4,27 +4,49 @@
 #include <ctype.h>
 #include <string.h>
 
+// helper function for input validation in addMeeting and deleteMeeting
+// used to check whether a given string contains a number
+int isNumber(char *str)
+{
+    char *ptr = str;
+    if (*str == '-')
+    {
+        ptr++;
+    }
+    while (*ptr)
+    {
+        if (!isdigit(*ptr))
+        {
+            return 0;
+        }
+        ptr++;
+    }
+    return 1;
+}
+
 void addMeeting(char *str, Meeting **calendar, int fromFile)
 {
-    // allocate memory for the event description based on string length
-    char *space = " \n";
-    int len = strcspn(str, space);
-    char *desc = (char *)malloc(len + 2);
-    if (!desc)
+    // allocate memory for the event description and time
+    // since the input string can be up to 1000 characters long and we do not know how
+    // long the individual components are, each component is allocated 1000 bytes initially
+    char *desc = (char *)malloc(1000);
+    char *dayStr = (char *)malloc(1000);
+    char *monthStr = (char *)malloc(1000);
+    char *hourStr = (char *)malloc(1000);
+    if (!desc || !dayStr || !monthStr || !hourStr)
     {
         printf("Memory allocation failed.");
         return;
     }
-    // extract data from input string based on the format it is given
-    int day, month, hour;
+    // extract data from input string
     int scanned;
     if (fromFile)
     {
-        scanned = sscanf(str, "%s %d.%d at %d\n", desc, &day, &month, &hour);
+        scanned = sscanf(str, "%s %[^.].%s at %s\n", desc, dayStr, monthStr, hourStr);
     }
     else
     {
-        scanned = sscanf(str, "%s %d %d %d", desc, &month, &day, &hour);
+        scanned = sscanf(str, "%s %s %s %s", desc, monthStr, dayStr, hourStr);
     }
     // validate number of scanned values
     if (scanned != 4)
@@ -38,8 +60,28 @@ void addMeeting(char *str, Meeting **calendar, int fromFile)
             printf("A should be followed by exactly 4 arguments.\n");
         }
         free(desc);
+        free(dayStr);
+        free(monthStr);
+        free(hourStr);
         return;
     }
+    // validate that the given date and time are numbers
+    if (!isNumber(dayStr) || !isNumber(monthStr) || !isNumber(hourStr))
+    {
+        printf("Date-time parts must be numeric.");
+        free(desc);
+        free(dayStr);
+        free(monthStr);
+        free(hourStr);
+        return;
+    }
+    // convert date and time to integers
+    int day = atoi(dayStr);
+    int month = atoi(monthStr);
+    int hour = atoi(hourStr);
+    free(dayStr);
+    free(monthStr);
+    free(hourStr);
     //  check if date and time are acceptable
     if (month < 1 || month > 12)
     {
@@ -79,7 +121,15 @@ void addMeeting(char *str, Meeting **calendar, int fromFile)
         free(desc);
         return;
     }
-    new->description = desc;
+    new->description = (char *)malloc(strlen(desc) + 1);
+    if (!new->description)
+    {
+        printf("Memory allocation failed.");
+        free(desc);
+        return;
+    }
+    strcpy(new->description, desc);
+    free(desc);
     new->month = month;
     new->day = day;
     new->hour = hour;
@@ -101,20 +151,45 @@ void addMeeting(char *str, Meeting **calendar, int fromFile)
         curr->next = new;
     }
     if (fromFile)
+    {
         return;
+    }
     printf("SUCCESS\n");
 }
 
 void deleteMeeting(char *str, Meeting **calendar)
 {
     // extract the time of the meeting to be deleted and validate arguments
-    int day, month, hour;
-    int scanned = sscanf(str, "%d %d %d", &month, &day, &hour);
+    // since the input string can be up to 1000 characters long and we do not know how
+    // long the individual components are, each component is allocated 1000 bytes initially
+    char *dayStr = (char *)malloc(1000);
+    char *monthStr = (char *)malloc(1000);
+    char *hourStr = (char *)malloc(1000);
+    int scanned = sscanf(str, "%s %s %s", monthStr, dayStr, hourStr);
     if (scanned != 3)
     {
         printf("D should be followed by exactly 3 arguments.\n");
+        free(dayStr);
+        free(monthStr);
+        free(hourStr);
         return;
     }
+    // validate that the given date and time are numbers
+    if (!isNumber(dayStr) || !isNumber(monthStr) || !isNumber(hourStr))
+    {
+        printf("Date-time parts must be numeric.");
+        free(dayStr);
+        free(monthStr);
+        free(hourStr);
+        return;
+    }
+    // convert date and time to integers
+    int day = atoi(dayStr);
+    int month = atoi(monthStr);
+    int hour = atoi(hourStr);
+    free(dayStr);
+    free(monthStr);
+    free(hourStr);
     //  check if date and time are acceptable
     if (month < 1 || month > 12)
     {
@@ -154,7 +229,7 @@ void deleteMeeting(char *str, Meeting **calendar)
         }
         if (!curr->next)
         {
-            printf("Time slot %02d.%02d at %02d is not in the calendar.\n", day, month, hour);
+            printf("The time slot %02d.%02d at %02d is not in the calendar.\n", day, month, hour);
             return;
         }
         Meeting *temp = curr->next;
@@ -310,7 +385,7 @@ int main(void)
             printf("SUCCESS\n");
             break;
         default: // unknown command
-            printf("Invalid command %s", str);
+            printf("Invalid command %s\n", str);
             break;
         }
     }
