@@ -122,7 +122,7 @@ A Math_lecture 3 26 14
 D 3 26 14
 A Math_lecture 3 26 14
 L
-W calendar
+W calendar.txt
 Q
 ```
 
@@ -130,4 +130,4 @@ After this, the calendar saves the first three entries since the first
 “Math_lecture” isn't successful because the time is already reserved in previous
 entry. After the entry is deleted with the command “D”, adding the
 “Math_lecture” is successful. After these, the calendar is printed and saved to
-the text file “calendar”.
+the text file “calendar.txt”.
