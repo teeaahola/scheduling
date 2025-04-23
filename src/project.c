@@ -4,50 +4,46 @@
 #include <ctype.h>
 #include <string.h>
 
-// helper function for input validation in addMeeting and deleteMeeting
-// used to check whether a given string contains a number
-int isNumber(char *str)
-{
-    char *ptr = str;
-    if (*str == '-')
-    {
-        ptr++;
-    }
-    while (*ptr)
-    {
-        if (!isdigit(*ptr))
-        {
-            return 0;
-        }
-        ptr++;
-    }
-    return 1;
-}
-
 void addMeeting(char *str, Meeting **calendar, int fromFile)
 {
-    // allocate memory for the event description and time
-    // since the input string can be up to 1000 characters long and we do not know how
-    // long the individual components are, each component is allocated 1000 (+ terminating
-    // null character) bytes initially
-    char *desc = (char *)malloc(1001);
-    char *dayStr = (char *)malloc(1001);
-    char *monthStr = (char *)malloc(1001);
-    char *hourStr = (char *)malloc(1001);
-    if (!desc || !dayStr || !monthStr || !hourStr)
+    // allocate memory for the event description based on word length
+    char *space = " \n";
+    char *ptr = str;
+    int strLen = strlen(str);
+    int wordLen = strcspn(str, space);
+    while (wordLen == 0)
+    {
+        if (ptr == (str + strLen))
+        {
+            if (fromFile)
+            {
+                printf("Each event should have a description, day, month and time.\n");
+            }
+            else
+            {
+                printf("A should be followed by exactly 4 arguments.\n");
+            }
+            return;
+        }
+        ptr++;
+        wordLen = strcspn(ptr, space);
+    }
+    char *desc = (char *)malloc(wordLen + 1);
+    if (!desc)
     {
         printf("Memory allocation failed.");
         return;
     }
+    int day, month, hour;
     // extract data from input string
     int scanned;
     if (fromFile)
     {
-        scanned = sscanf(str, "%s %[^.].%s at %s\n", desc, dayStr, monthStr, hourStr);
+        scanned = sscanf(str, "%s %d.%d at %d\n", desc, &day, &month, &hour);
     }
     else
     {
-        scanned = sscanf(str, "%s %s %s %s", desc, monthStr, dayStr, hourStr);
+        scanned = sscanf(str, "%s %d %d %d\n", desc, &month, &day, &hour);
     }
     // validate number of scanned values
     if (scanned != 4)
@@ -61,28 +57,8 @@ void addMeeting(char *str, Meeting **calendar, int fromFile)
             printf("A should be followed by exactly 4 arguments.\n");
         }
         free(desc);
-        free(dayStr);
-        free(monthStr);
-        free(hourStr);
         return;
     }
-    // validate that the given date and time are numbers
-    if (!isNumber(dayStr) || !isNumber(monthStr) || !isNumber(hourStr))
-    {
-        printf("Date-time parts must be numeric.");
-        free(desc);
-        free(dayStr);
-        free(monthStr);
-        free(hourStr);
-        return;
-    }
-    // convert date and time to integers
-    int day = atoi(dayStr);
-    int month = atoi(monthStr);
-    int hour = atoi(hourStr);
-    free(dayStr);
-    free(monthStr);
-    free(hourStr);
     //  check if date and time are acceptable
     if (month < 1 || month > 12)
     {
@@ -122,15 +98,7 @@ void addMeeting(char *str, Meeting **calendar, int fromFile)
         free(desc);
         return;
     }
-    new->description = (char *)malloc(strlen(desc) + 1);
-    if (!new->description)
-    {
-        printf("Memory allocation failed.");
-        free(desc);
-        return;
-    }
-    strcpy(new->description, desc);
-    free(desc);
+    new->description = desc;
     new->month = month;
     new->day = day;
     new->hour = hour;
@@ -164,34 +132,13 @@ void deleteMeeting(char *str, Meeting **calendar)
     // since the input string can be up to 1000 characters long and we do not know how
     // long the individual components are, each component is allocated 1000 (+ terminating
     // null character) bytes initially
-    char *dayStr = (char *)malloc(1001);
-    char *monthStr = (char *)malloc(1001);
-    char *hourStr = (char *)malloc(1001);
-    int scanned = sscanf(str, "%s %s %s", monthStr, dayStr, hourStr);
+    int day, month, hour;
+    int scanned = sscanf(str, "%d %d %d", &month, &day, &hour);
     if (scanned != 3)
     {
         printf("D should be followed by exactly 3 arguments.\n");
-        free(dayStr);
-        free(monthStr);
-        free(hourStr);
         return;
     }
-    // validate that the given date and time are numbers
-    if (!isNumber(dayStr) || !isNumber(monthStr) || !isNumber(hourStr))
-    {
-        printf("Date-time parts must be numeric.");
-        free(dayStr);
-        free(monthStr);
-        free(hourStr);
-        return;
-    }
-    // convert date and time to integers
-    int day = atoi(dayStr);
-    int month = atoi(monthStr);
-    int hour = atoi(hourStr);
-    free(dayStr);
-    free(monthStr);
-    free(hourStr);
     //  check if date and time are acceptable
     if (month < 1 || month > 12)
     {
@@ -337,7 +284,7 @@ int main(void)
         {
             printf("Issue reading command.\n");
         }
-        // chech whether given command follow guidelines
+        // check whether given command follow guidelines
         int scanned = sscanf(str, "%c", &command);
         if (scanned != 1)
         {
